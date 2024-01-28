@@ -139,7 +139,7 @@ actual_version=$(lsb_release -rs)
 
 # Función para imprimir un mensaje de error y salir
 error_y_salir() {
-    echo "ERROR: El sistema operativo o la versión no cumplen con los requisitos mínimos."
+    echo "ERROR: El sistema operativo instalado ($actual_SO $actual_version) por ahora no son compatibles con Fibercat Luffy."
     exit 1
 }
 
@@ -166,4 +166,4 @@ case $actual_SO in
 esac
 
 # Si llegamos aquí, el sistema operativo y la versión son correctos
-echo "El sistema operativo y la versión cumplen con los requisitos mínimos."
+echo "El sistema operativo ($actual_SO $actual_version) cumplen con los requisitos mínimos."
