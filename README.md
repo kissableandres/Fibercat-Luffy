@@ -8,10 +8,21 @@ Fibercat Luffy es un script Bash diseñado para facilitar la instalación de un 
 - **OpenSSH:** OpenSSH es la herramienta principal de conectividad para inicio de sesión remoto con el protocolo SSH. Encripta todo el tráfico para eliminar el espionaje, el secuestro de conexiones y otros tipos de ataques. Además, OpenSSH proporciona una amplia gama de capacidades de túneles seguros, diversos métodos de autenticación y opciones de configuración sofisticadas.
 
 ## Instalación
+
+### Desde Github
 1. Clona el repositorio en tu servidor:
+   ```bash
+   git clone https://github.com/kissableandres/Fibercat-Luffy.git
+2. Ingresa y da los permisos necesarios
+   ```bash
+   cd Fibercat-Luffy && sudo chmod 764 install_multi.sh && ./install_multi.sh
+### Desde el servidor de Fibercat Networks Spa.
+- Proximamente
 
 ## Contribuciones
-¡Las contribuciones son bienvenidas! Si tienes ideas para nuevas características o mejoras, por favor, crea un pull request.
+¡Las contribuciones son bienvenidas! Si tienes ideas para nuevas características o mejoras, por favor, ingresa al Discord
+
+[Únete al servidor de Discord](https://discord.gg/PxzVZZcS9v)
 
 ## Notas
 - Asegúrate de revisar y personalizar la configuración antes de ejecutar el script en un entorno de producción.
