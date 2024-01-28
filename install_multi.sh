@@ -6,12 +6,12 @@
 #	Condiciones de Instalacion
 min_HDD=58 	# Valores en Gigabytes
 min_RAM=8	# Valores en Gigabytes
-aceptables_SO=("Ubuntu")
-aceptables_version_ubuntu=("22.04" "")
-aceptables_version_debian=("" "")
+aceptable_SO=("Ubuntu")
+aceptable_version_ubuntu=("22.04" "")
+aceptable_version_debian=("" "")
 
 #	Tiempo de Pausas entre mensajes
-pausa_larga=0
+pausa_larga=1
 pausa_corta=$pausa_larga
 
 #   Colores de instalación
@@ -36,7 +36,7 @@ fi
 [:::::::::::::::		SISTEMA LUFFY   					::::::::]
 *********************************************************************
 Cargar con sudo ./install_multi.sh
-Por prevención, siempre suba estos archivos a /home/fibercat
+Por prevención, siempre suba estos archivos a su directorio de usuario /home
 
 Sistema luffy es un sistema que permite instalar un servidor funcional
 completo. Es open source.
@@ -44,11 +44,11 @@ El siguiente SCRIPT es y ha sido testeado en los siguientes
 sistemas operativos:
 *********************************************************************
 SERVERS:
-*   UBUNTU SERVER 22.04.3 LTS
+*   UBUNTU SERVER 22.04 LTS
 
 TECNOLOGIAS:
-*   APACHE 2.4.58
-*********************************************************************
+*   PROXIMAMENTE
+*****************************************************************
 COMMENT
 #---------------------------------
 #	LOGO FIBERCAT
@@ -109,31 +109,32 @@ echo -e "${verde}I PARTE: REVISIÓN DE SEGURIDAD${reset}"
 sleep $pausa_corta
 
 # OBTENEMOS EL TAMAÑO DE DISCO EN /
-HDD_size_actually=$(df -B 1M --output=size / | tail -n 1 | awk '{print $1}')
-HDD_size_actually=$(echo "scale=2; $HDD_size_actually/1024" | bc)
+HDD_tamano_actual=$(df -B 1M --output=size / | tail -n 1 | awk '{print $1}')
+HDD_tamano_actual=$(echo "scale=2; $HDD_tamano_actual/1024" | bc)
 
-if [ "$(echo "$HDD_size_actually >= $min_HDD" | bc -l)" -eq 1 ]; then
-	echo -e "El tamaño de Disco ($HDD_size_actually) es mayor o igual a ${min_HDD}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+if [ "$(echo "$HDD_tamano_actual >= $min_HDD" | bc -l)" -eq 1 ]; then
+	echo -e "El tamaño de Disco ($HDD_tamano_actual) es mayor o igual a ${min_HDD}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
 else
-	echo -e "El tamaño de Disco ($HDD_size_actually) es menor a ${min_HDD}G. ${boton_error}${amarillo}ERROR${reset}"
+	echo -e "El tamaño de Disco ($HDD_tamano_actual) es menor a ${min_HDD}G. ${boton_error}${amarillo}ERROR${reset}"
 	echo "No podemos continuar con la instalación"
 	exit
 fi
 sleep $pausa_corta
 
 # OBTENEMOS EL TAMAÑO DE RAM
-RAM_size_actually=$(free --mega | awk '/Mem:/ {print $2}' | tr -d '[:alpha:]')
-RAM_size_actually=$(echo "scale=2; $RAM_size_actually/1024" | bc)
+RAM_tamano_actual=$(free --mega | awk '/Mem:/ {print $2}' | tr -d '[:alpha:]')
+RAM_tamano_actual=$(echo "scale=2; $RAM_tamano_actual/1024" | bc)
 
-if [ "$(echo "$RAM_size_actually >= $min_RAM" | bc -l)" -eq 1 ]; then
-	echo -e "El tamaño de Disco ($RAM_size_actually) es mayor o igual a ${min_RAM}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+if [ "$(echo "$RAM_tamano_actual >= $min_RAM" | bc -l)" -eq 1 ]; then
+	echo -e "El tamaño de Disco ($RAM_tamano_actual) es mayor o igual a ${min_RAM}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
 else
-	echo -e "El tamaño de Disco ($RAM_size_actually) es menor a ${min_RAM}G. ${boton_error}${amarillo}ERROR${reset}"
+	echo -e "El tamaño de Disco ($RAM_tamano_actual) es menor a ${min_RAM}G. ${boton_error}${amarillo}ERROR${reset}"
 	echo "No podemos continuar con la instalación"
 	exit
 fi
+sleep $pausa_corta
 
-# Obtener información del sistema
+# OBTENEMOS EL SISTEMA OPERATIVO
 actual_SO=$(lsb_release -is)
 actual_version=$(lsb_release -rs)
 
@@ -144,19 +145,19 @@ error_y_salir() {
 }
 
 # Verificar el sistema operativo
-if [[ ! " ${aceptables_SO[@]} " =~ " $actual_SO " ]]; then
+if [[ ! " ${aceptable_SO[@]} " =~ " $actual_SO " ]]; then
     error_y_salir
 fi
 
 # Verificar la versión según el sistema operativo
 case $actual_SO in
     "Ubuntu")
-        if [[ ! " ${aceptables_version_ubuntu[@]} " =~ " $actual_version " ]]; then
+        if [[ ! " ${aceptable_version_ubuntu[@]} " =~ " $actual_version " ]]; then
             error_y_salir
         fi
         ;;
     "Debian")
-        if [[ ! " ${aceptables_version_debian[@]} " =~ " $actual_version " ]]; then
+        if [[ ! " ${aceptable_version_debian[@]} " =~ " $actual_version " ]]; then
             error_y_salir
         fi
         ;;
@@ -166,4 +167,4 @@ case $actual_SO in
 esac
 
 # Si llegamos aquí, el sistema operativo y la versión son correctos
-echo "El sistema operativo ($actual_SO $actual_version) cumplen con los requisitos mínimos."
+echo -e "El sistema operativo ($actual_SO $actual_version) cumplen con los requisitos mínimos. ${boton_correcto}${cian_claro}CORRECTO${reset}"
