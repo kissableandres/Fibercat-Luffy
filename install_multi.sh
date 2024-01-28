@@ -139,7 +139,7 @@ actual_version=$(lsb_release -rs)
 
 # Función para imprimir un mensaje de error y salir
 error_y_salir() {
-    echo "ERROR: El sistema operativo instalado ($actual_SO $actual_version) por ahora no son compatibles con Fibercat Luffy."
+    echo -e "${boton_error}${amarillo}ERROR${reset} El sistema operativo instalado ($actual_SO $actual_version) por ahora no son compatibles con Fibercat Luffy."
     exit 1
 }
 
