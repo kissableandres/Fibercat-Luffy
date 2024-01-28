@@ -7,7 +7,7 @@
 min_HDD=58 	# Valores en Gigabytes
 min_RAM=8	# Valores en Gigabytes
 aceptables_SO=("Ubuntu")
-aceptables_version_ubuntu=("20.04" "")
+aceptables_version_ubuntu=("22.04" "")
 aceptables_version_debian=("" "")
 
 #	Tiempo de Pausas entre mensajes
