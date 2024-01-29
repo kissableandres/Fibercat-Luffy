@@ -15,7 +15,7 @@ Fibercat Luffy es un script Bash diseñado para facilitar la instalación de un 
    git clone https://github.com/kissableandres/Fibercat-Luffy.git
 2. Ingresa y da los permisos necesarios
    ```bash
-   cd Fibercat-Luffy && sudo chmod 764 install_multi.sh && ./install_multi.sh
+   cd Fibercat-Luffy && sudo chmod 764 install_multi.sh && sudo ./install_multi.sh
 ### Desde el servidor de Fibercat Networks Spa.
 - Proximamente
 
