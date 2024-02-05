@@ -22,7 +22,8 @@ DOMAIN="my.domain.com"
 ```
 - ssh_key.cfg
 
-Cambia `INSTALL=false` a `INSTALL=true` y el sistema isntalará automaticamente tu ssh. En caso que necesites crear un par, coloca `INSTALL=giveme`\
+Cambia `INSTALL=false` a `INSTALL=true` y el sistema isntalará automaticamente tu ssh. \
+En caso que necesites crear un par, coloca `INSTALL=giveme`\
 \
 Cambia `PUBLIC="Generic"` por clave publica como por ejemplo: `PUBLIC="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDExAMPLE1xI7xH5U9BAk8gIISFgjEjM1j+uaW1i1t+kgq8j2ee1m/Zynh2ys4tF4kIqj1Yj1iiaZfg/MNHD/NhE5YOWm+H8VYNw== example@example.com"`\
 \
