@@ -1,64 +1,159 @@
 #!/bin/bash
 
-#---------------------------------
-#	CONFIGURACIÓN DE SERVICIOS
-#---------------------------------
-#	Condiciones de Instalacion
-min_HDD=58 	# Valores en Gigabytes
-min_RAM=8	# Valores en Gigabytes
-aceptable_SO=("Ubuntu")
-aceptable_version_ubuntu=("22.04" "")
-aceptable_version_debian=("" "")
+#	                  CONFIGURACION INICIAL
+#------------------------------------------------------------------
+#	Versión
+system_version=0.4			# Versión del servicio
+#   Formato
+negrita='\033[1m'			# Define el formato de texto como negrita
+subrayado='\033[4m'			# Define el formato de texto como subrayado
+reset='\033[0m'				# Restablece el formato de texto a predeterminado
+#   Fondos
+f_blanco='\033[0;47m'		# Define el color de fondo como blanco
+#   Botones
+btn_ok='\033[1;45m'			# Define el formato de botón OK.
+destacar='\033[1;33m'		# Define el formato para destacar en amarillo.
+btn_error='\033[1;41m'		# Define el formato de botón de error
+cyan='\033[1;36m'			# Define el color de texto como cian
+titulo=$cyan$subrayado		# Define el formato de título como cian y subrayado
+parte='\033[7;32m'			# Define el formato de parte del texto
 
-#	Tiempo de Pausas entre mensajes
-pausa_larga=1
-pausa_corta=$pausa_larga
-
-#   Colores de instalación
-amarillo='\033[1;33m'
-cian_claro='\033[1;36m'
-boton_error='\033[1;41m'
-boton_correcto='\033[1;44m'
-verde='\033[7;32m'
-reset='\033[0m'
-sub='\033[4m'
-negr='\033[1m'
-fondoblanco='\033[0;47m'
-
-#	Detectar Sistema
-if [ -e /etc/os-release ]; then
-    source /etc/os-release
-	sistema_operativo=$ID
-	sistema_version=$VERSION_ID
-else
-    sistema_operativo = "null";
-fi
-
-<<COMMENT
-*********************************************************************
-[:::::::::::::::		SISTEMA LUFFY   					::::::::]
-*********************************************************************
-Cargar con sudo ./install_multi.sh
-Por prevención, siempre suba estos archivos a su directorio de usuario /home
-
-Sistema luffy es un sistema que permite instalar un servidor funcional
-completo. Es open source.
-El siguiente SCRIPT es y ha sido testeado en los siguientes 
-sistemas operativos:
-*********************************************************************
-SERVERS:
-*   UBUNTU SERVER 22.04 LTS
-
-TECNOLOGIAS:
-*   PROXIMAMENTE
-*****************************************************************
-COMMENT
-#---------------------------------
-#	LOGO FIBERCAT
-#---------------------------------
 clear
 
-echo -e "${cian_claro}⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+#	                  FUNCIONES GENERALES
+#------------------------------------------------------------------
+#	Titulos Grandes
+mititulo(){
+	echo -e "${parte}\n--------------------------$1--------------------------\n${reset}"
+}
+#	Titulo del log
+mititulo_log(){
+	echo "------------------------------------------------------------------" >> tmp.log
+	echo $1 >> tmp.log
+	echo "------------------------------------------------------------------" >> tmp.log
+}
+#	Mi Subtitulo
+misubtitulo(){
+	echo -e "\n${titulo}$1\n${reset}"
+}
+misubtitulo_log(){
+	echo "------------------------------------------------------------------" >> tmp.log
+	echo "[||||||||||||||||$1||||||||||||||||]" >> tmp.log
+	echo "------------------------------------------------------------------" >> tmp.log
+}
+misubtitulo_update(){
+	echo "------------------------------------------------------------------" >> update.cfg
+	echo "[||||||||||||||||$1||||||||||||||||]" >> update.cfg
+	echo "------------------------------------------------------------------" >> update.cfg
+}
+
+#	Mensaje
+mimensaje(){
+	echo -e "${cyan}\n$1\n${reset}"
+}
+
+#	Destacar
+destacar(){
+	echo -e " ${destacar}$1${reset}"
+}
+#	Log
+log(){
+	echo "$(date +'%d-%b-%Y %H:%M:%S.%3N') $1" >> tmp.log
+}
+
+#	Ok
+ok(){
+	echo -e " ${btn_ok} PERFECTO ${reset} $1"
+	if [ "$2" != false ];then
+		log "$1"
+	fi
+}
+#	Error
+error(){
+	echo -e " ${btn_error} ERROR ${reset} $1"
+	if [ "$2" == false ];then
+		echo ""
+	else
+		echo -e "$2"
+		log "ERROR: $1"
+	fi
+	echo -e "${destacar}No podemos continuar con la instalación.${reset}"
+	exit 1
+}
+
+#	                  REQUISITOS INICIALES
+#------------------------------------------------------------------
+mititulo "REQUISITOS INICIALES"
+
+#	Declaración de archivos a revisar: 
+declare -a files=(
+	"config.cfg"
+	"ssh_key.cfg"
+	"installer.cfg"
+)
+
+#	Función de Revisión de presencia de archivos
+revisar_archivo() {
+	if [ -f "$1" ]; then
+		ok "${destacar}$1${reset} se encuentra presente." false
+		source "$1"
+	else
+		error "No se encontró el archivo de configuración ("$1")." "${destacar}Puede descargar una copia del archivo "$1" desde https://github.com/kissableandres/Fibercat-Luffy ${reset}"
+	fi
+	sleep $PAUSA_CORTA
+}
+#	Ejecuta la revisión
+for file in "${files[@]}"
+do
+	revisar_archivo "$file"
+done
+
+#							LOG DE INSTALACIÓN
+#------------------------------------------------------------------
+#	Establecemos temporalmente la zona horaria desde config.cfg
+export TZ="$TIMEZONE"
+#	Creamos el "Registro del log".
+echo "$(date +'%d-%b-%Y %H:%M:%S.%3N') Inicia la instalación" > tmp.log
+#	Le damos permisos al dueño configurado en config.cfg
+sudo chown "$SUDOUSER":"$SUDOGROUP" tmp.log
+ok "Se ha creado el logger ${destacar}tmp.log${reset}" false
+
+sleep $PAUSA_CORTA
+
+#								PRESENTACIÓN
+#------------------------------------------------------------------
+mititulo "-----------------------------------------------
+[:::::::::::::::           SISTEMA MONKEY D. LUFFY          ::::::::::::]
+-----------------------------------------------"
+mimensaje "BIENVENIDO
+Para poder instalar correctamente, ten en cuenta lo siguiente:
+1. Este script debe ser ejecutado con sudo: ${destacar}sudo ./install_multi.sh${reset}${cyan}
+2. Para que todo fluya estandar, siempre suba estos archivos
+al directorio /home del usuario sudoer, ejemplo:
+${destacar}cd /home/usuario_sudoer${reset}${cyan}
+3. Este SCRIPT esta pensado para ser instalado en un sistema ${destacar}minimimamente instalado${reset}${cyan}.
+Errores podrían suceder si se ejecuta en un entorno con el software preinstalado.
+Con todo, este script revisará lo máximo que pueda y desintalará versiones antiguas.
+Asimismo, intentará restaurar configuraciones.
+4. El siguiente SCRIPT es y ha sido testeado en los siguientes 
+sistemas operativos:
+*********************************************************************
+
+${destacar}*   UBUNTU SERVER 22.04 LTS${reset}${cyan}
+
+****************************************************************
+Al continuar, estas de acuerdo con que se modificará el sistema exhaustivamente.
+También se eliminaran directorios si ya tenias instalado el sistema o falló anteriormente.${reset}"
+
+# Espera a que el usuario presione una tecla
+#read -n 1 -s -r -p "Presiona cualquier tecla para continuar... o presiona ctrl+c para terminar el Script"
+# Continúa con el resto del script
+echo ""
+echo "Continuamos..."
+
+#							LOGO FIBERCAT
+#------------------------------------------------------------------
+destacar "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 '########:'####:'########::'########:'########:::'######:::::'###::::'########:
  ##.....::. ##:: ##.... ##: ##.....:: ##.... ##:'##... ##:::'## ##:::... ##..::
  ##:::::::: ##:: ##:::: ##: ##::::::: ##:::: ##: ##:::..:::'##:. ##::::: ##::::
@@ -67,15 +162,13 @@ echo -e "${cian_claro}⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿�
  ##:::::::: ##:: ##:::: ##: ##::::::: ##::. ##:: ##::: ##: ##.... ##:::: ##::::
  ##:::::::'####: ########:: ########: ##:::. ##:. ######:: ##:::: ##:::: ##::::
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-	         			        NETWORKS SPA 2024
-${cian_claro}INSTALACION LUFFY SERVER${reset}"
-sleep $pausa_corta
+				NETWORKS SPA 2024\n"
 
-#---------------------------------
-#	LOGO SERVER
-#---------------------------------
+sleep $PAUSA_CORTA
 
-echo "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
+#							LOGO SERVER
+#------------------------------------------------------------------
+echo -e "${negrita}⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⢻⣿⣻⣿⡾⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣾⣿⣿⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⢻⣷⢛⣯⣽⣷⣿⣿⣿⣿⣿⣿⣿
 ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣹⡇⡿⣿⢿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⣿⣹⣧⢻⡞⣟⢻⢿⣻⣿⣿⣿⣿⣿⣿
@@ -99,271 +192,499 @@ echo "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣟⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿�
 ⠿⠟⠿⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣻⣟⡷⠀⢫⣷⣶⣶⢿⡟⣯⢗⠊⠘⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣼⣯⢻⡜⡄⠀⢿⣾⡽⣾⡹⢧⠣⠀⣚⡴⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣾⣿⡭⢷⡘⠀⠀⠸⣷⡻⣖⡏⢇⠃⠀⣧⠳⡉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⠳⣝⢢⠑⠀⠀⠀⢻⣝⢧⡚⠡⠀⢰⣡⠓⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀"
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⠳⣝⢢⠑⠀⠀⠀⢻⣝⢧⡚⠡⠀⢰⣡⠓⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀${reset}"
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-#---------------------------------
-#	REVISIÓN DE SEGURIDAD
-#---------------------------------
+#						REVISIÓN DE SEGURIDAD
+#------------------------------------------------------------------
+mititulo "REVISIÓN DE SEGURIDAD"
+mititulo_log "REVISIÓN DE SEGURIDAD"
 
-echo -e "${verde}I PARTE: REVISIÓN DE SEGURIDAD${reset}"
-sleep $pausa_corta
+#						REQUISITOS DE HARDWARE
+#------------------------------------------------------------------
+misubtitulo "Requisitos de Hardware y Distribución"
 
-echo -e "${cian_claro}${sub}
-Requisitos de Hardware y OS${reset}"
-
-# OBTENEMOS EL TAMAÑO DE DISCO EN /
+#	Obtenemos los datos de Disco en /
 HDD_tamano_actual=$(df -B 1M --output=size / | tail -n 1 | awk '{print $1}')
 HDD_tamano_actual=$(echo "scale=2; $HDD_tamano_actual/1024" | bc)
-
-if [ "$(echo "$HDD_tamano_actual >= $min_HDD" | bc -l)" -eq 1 ]; then
-	echo -e "El tamaño de Disco ($HDD_tamano_actual) es mayor o igual a ${min_HDD}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-else
-	echo -e "El tamaño de Disco ($HDD_tamano_actual) es menor a ${min_HDD}G. ${boton_error}${amarillo}ERROR${reset}"
-	echo "No podemos continuar con la instalación"
-	exit
-fi
-
-sleep $pausa_corta
-
-# OBTENEMOS EL TAMAÑO DE RAM
+#	Obtenemos el tamaño de la RAM
 RAM_tamano_actual=$(free --mega | awk '/Mem:/ {print $2}' | tr -d '[:alpha:]')
 RAM_tamano_actual=$(echo "scale=2; $RAM_tamano_actual/1024" | bc)
 
-if [ "$(echo "$RAM_tamano_actual >= $min_RAM" | bc -l)" -eq 1 ]; then
-	echo -e "El tamaño de Disco ($RAM_tamano_actual) es mayor o igual a ${min_RAM}G. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#	"$REQUISITOS_HARDWARE" = "true|false"
+if [ "$REQUISITOS_HARDWARE" = "true" ]; then
+
+	log "Directiva REQUISITOS_HARDWARE = true."
+
+	if [ "$(echo "$HDD_tamano_actual >= $MIN_HDD" | bc -l)" -eq 1 ]; then
+		ok "El tamaño de Disco (${HDD_tamano_actual}G) es mayor o igual a ${MIN_HDD}G."
+	else
+		error "El tamaño de Disco (${HDD_tamano_actual}G) es menor a ${MIN_HDD}G."
+	fi
+
+	sleep $PAUSA_CORTA
+
+	if [ "$(echo "$RAM_tamano_actual >= $MIN_RAM" | bc -l)" -eq 1 ]; then
+		ok "El tamaño de Disco (${RAM_tamano_actual}G) es mayor o igual a ${MIN_RAM}G."
+	else
+		error "El tamaño de Disco (${RAM_tamano_actual}G) es menor a ${MIN_RAM}G."
+	fi
+
 else
-	echo -e "El tamaño de Disco ($RAM_tamano_actual) es menor a ${min_RAM}G. ${boton_error}${amarillo}ERROR${reset}"
-	echo "No podemos continuar con la instalación"
-	exit
+	ok "Se ha solicitado que no se verifique el Hardware." false
+	log "Directiva REQUISITOS_HARDWARE = false. No se ha verificado el hardware."
+	log "Se registra que root tiene en el disco $HDD_tamano_actual Gb."
+	log "Se registra que la RAM de sistema es de $RAM_tamano_actual Gb."
 fi
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-# OBTENEMOS EL SISTEMA OPERATIVO
-actual_SO=$(lsb_release -is)
+#				VERIFICAR COMPATIBILIDAD CON DISTRIBUCIÓN
+#------------------------------------------------------------------
+# Obtenemos la distribución
+actual_DIST=$(lsb_release -is)
 actual_version=$(lsb_release -rs)
-
-# Función para imprimir un mensaje de error y salir
-error_y_salir() {
-    echo -e "${boton_error}${amarillo}ERROR${reset} El sistema operativo instalado ($actual_SO $actual_version) por ahora no son compatibles con Fibercat Luffy."
-    exit 1
-}
+log "Distribución Actual: $actual_DIST $actual_version"
 
 # Verificar el sistema operativo
-if [[ ! " ${aceptable_SO[@]} " =~ " $actual_SO " ]]; then
-    error_y_salir
+if [[ ! " ${ACEPTABLE_SO[@]} " =~ " $actual_DIST " ]]; then
+	error "La distribución instalada ($actual_DIST $actual_version) por ahora no es compatibles con Fibercat Luffy"
 fi
 
 # Verificar la versión según el sistema operativo
-case $actual_SO in
-    "Ubuntu")
-        if [[ ! " ${aceptable_version_ubuntu[@]} " =~ " $actual_version " ]]; then
-            error_y_salir
-        fi
-        ;;
-    "Debian")
-        if [[ ! " ${aceptable_version_debian[@]} " =~ " $actual_version " ]]; then
-            error_y_salir
-        fi
-        ;;
-    *)
-        error_y_salir
-        ;;
+case $actual_DIST in
+	"Ubuntu")
+		if [[ ! " ${ACEPTABLE_VERSION_UBUNTU[@]} " =~ " $actual_version " ]]; then
+			error "La distribución instalada ($actual_DIST $actual_version) por ahora no es compatibles con Fibercat Luffy" 
+		fi
+		;;
+	"Debian")
+		if [[ ! " ${ACEPTABLE_VERSION_DEBIAN[@]} " =~ " $actual_version " ]]; then
+			error "La distribución instalada ($actual_DIST $actual_version) por ahora no es compatibles con Fibercat Luffy"
+		fi
+		;;
+	*)
+		error "La distribución instalada ($actual_DIST $actual_version) por ahora no es compatibles con Fibercat Luffy"
+		;;
 esac
 
 # Si llegamos aquí, el sistema operativo y la versión son correctos
-echo -e "El sistema operativo ($actual_SO $actual_version) cumplen con los requisitos mínimos. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+ok "El sistema operativo ($actual_DIST $actual_version) cumplen con los requisitos mínimos."
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-######################## VERSION 0.2 ########################
-
-# PRIVILEGIOS
-
-echo -e "${cian_claro}${sub}
-Verificar privilegios${reset}"
+#						VERIFICAR PRIVILEGIOS
+#------------------------------------------------------------------
+misubtitulo "Verificar privilegios de usuario"
 
 # Verificar si el usuario actual es root
 if [ "$EUID" -eq 0 ]; then
-    echo -e "El usuario actual tiene privilegios ${amarillo}root${reset}. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	ok "El usuario actual tiene privilegios ${destacar}root${reset}." false
+	echo "$(date +'%d-%b-%Y %H:%M:%S.%3N') Se registra que el usuario tiene privilegios ROOT." >> tmp.log
 else
-    echo -e "${boton_error}${amarillo}ERROR${reset} El usuario actual no posee privilegios ${amarillo}root${reset}. Por favor, utilice sudo para instalar."
-    exit
+ 	log "Usuario sin privilegios. Finalizado."
+	error "El usuario actual no posee privilegios ${destacar}ROOT${reset}. Por favor, utilice ${destacar}sudo${reset} para instalar." false
 fi
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-# CHECKING DE ARCHIVOS AUXILIARES
-echo -e "${cian_claro}${sub}
-Verificar archivos de configuración escenciales${reset}"
-
-# Cargamos la configuración de config.cfg
-if [[ -f "config.cfg" ]]; then
-    echo -e "${amarillo}config.cfg${reset} se encuentra presente. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-    source "config.cfg"
-else
-    echo -e "${boton_error}${amarillo}ERROR${reset} No se encontró el archivo de configuración (config.cfg)."
-    echo -e "${amarillo}Puede descargar una copia del archivo config.cfg desde https://github.com/kissableandres/Fibercat-Luffy ${reset}"
-    exit 1
+#						VERIFICAR USUARIO SUDOER
+#------------------------------------------------------------------
+# Verifica si el usuario está adscrito al grupo
+if groups "$SUDOUSER" | grep -q "\b$SUDOGROUP\b"; then
+	ok "${destacar}$SUDOUSER${reset} está adscrito al grupo ${destacar}$SUDOGROUP${reset}." false
+	log "El usuario $SUDOUSER pertenece al grupo $SUDOGROUP."
+else 
+	echo -e " ${destacar}$SUDOUSER${reset} NO está adscrito al grupo ${destacar}$SUDOGROUP${reset}."
+	log "El usuario $SUDOUSER NO pertenece al grupo $SUDOGROUP."
+	#	Verificamos que existe el grupo en cuestion
+	if grep -q "^$SUDOGROUP:" /etc/group; then
+		ok "El grupo ${destacar}$SUDOGROUP${reset} ya existe." false
+		log "Existe el grupo $SUDOGROUP"
+	else
+		echo -e " El grupo ${destacar}$SUDOGROUP${reset} no existe. Creándolo..."
+		sudo groupadd "$SUDOGROUP"
+		ok "El grupo ${destacar}$SUDOGROUP${reset} ha sido creado." false
+		log "El grupo $SUDOGROUP ha sido creado."
+	fi
+	sudo usermod -aG "$SUDOGROUP" "$SUDOUSER"
+	ok "Se ha agregado ${destacar}$SUDOUSER${reset} al grupo ${destacar}$SUDOGROUP${reset}." false
+	log "Usuario $SUDOUSER agragado al grupo $SUDOGROUP."
 fi
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-# Cargamos la configuración de ssh_key.cfg
-if [[ -f "ssh_key.cfg" ]]; then
-    echo -e "${amarillo}ssh_key.cfg${reset} se encuentra presente. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-    source "ssh_key.cfg"
+mititulo "LOCALIZACION E IDIOMA"
+mititulo_log "LOCALIZACION E IDIOMA"
+
+#						HORA LOCAL
+#------------------------------------------------------------------
+misubtitulo "Actualizar Zona Horaria"
+TIME=$(cat /etc/timezone);
+
+if [[ $TIME == "$TIMEZONE" ]]
+then
+	ok "La zona horaria solicitada ($TIMEZONE) ya es $TIME."
 else
-    echo -e "${boton_error}${amarillo}ERROR${reset} No se encontró el archivo de configuración (ssh_key.cfg)."
-    echo -e "${amarillo}Puede descargar una copia del archivo ssh_key.cfg desde https://github.com/kissableandres/Fibercat-Luffy ${reset}"
-    exit 1
+    timedatectl set-timezone $TIMEZONE
+	ok "Se ha reemplazado $TIME (Actual) por $TIMEZONE (DIRECTIVA TIMEZONE)."
 fi
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-echo -e "
-${verde}II PARTE: INSTALACIÓN DE SISTEMA BASE${reset}"
-sleep $pausa_corta
+#						LOCALES
+#------------------------------------------------------------------
+misubtitulo "Instalando Locales (Idioma)"
+ACTUAL_LOCALE=$(locale | grep -oP '^LANG=\K.*')
+log "Declaramos que actualmente Locales es $ACTUAL_LOCALE."
 
-# CREACIÓN DE DIRECTORIOS
-echo -e "${cian_claro}${sub}
-Creando Directorios de sistema${reset}"
+# Verificar si language-pack-es está instalado
+if dpkg -l | grep -q "language-pack-es"; then
+    ok "El paquete language-pack-es está instalado."
+else
+	log "Instalacion de Locales"
+    destacar "El paquete language-pack-es no está instalado."
+	misubtitulo_log "LOG DE LA INSTALACION DE LOCALES"
+	sudo apt-get install language-pack-es -y >> tmp.log 2>&1
+	misubtitulo_log "LOG update-locale LANG=$LOCALES"
+	sudo update-locale LANG=$LOCALES >> tmp.log 2>&1
+	ok "Se han instalado el soporte para idioma local y actualizado locales."
+	log "Será necesario reinciar. (sudo reboot)"
+fi
 
-<<COMMENT
-A continuación, declararemos un array que contendrán las rutas de los directorios.
-La aplicación verificará que estén creados y, de no ser así, los creará.
-Verifica que cada directorio tenga una separación de un espacio como mínimo.
-$SERVERDIRECTORY lo debemos obtener del archivo config. Por defecto, se llamara
-fibercat_luffy.
+sleep $PAUSA_CORTA
 
-	"/$SERVERDIRECTORY"             Contiene todos los archivos de sistema.
-	"/$SERVERDIRECTORY/www"         Contiene la salida www a travésdel puerto 8080.
-	"/$SERVERDIRECTORY/installed"   Contiene los logs de salida de instalación.
-	"/$SERVERDIRECTORY/ssl"         Contiene los certificados ssl de la maquina
-	"/$SERVERDIRECTORY/logs"        Continene los logs
-    "/$SERVERDIRECTORY/logs/system" Contiene los logs del sistema
-COMMENT
+# Verificar si ya esta configurada el local
+if [ "$ACTUAL_LOCALE" = "$LOCALES" ]; then
+	ok "La configuración de locales actual ($ACTUAL_LOCALE) ya está configurada en $LOCALES"
+else
+	sudo update-locale LANG=$LOCALES
+	ok "El soporte para $ACTUAL_LOCALE se ha sido instalado con exito. Pero requiere reiniciar."
+fi
 
+sleep $PAUSA_CORTA
+
+#						INSTALACIÓN DE SISTEMA BASE
+#------------------------------------------------------------------
+mititulo "INSTALACIÓN DE SISTEMA BASE"
+mititulo_log "INSTALACIÓN DE SISTEMA BASE"
+
+#						DIRECTORIOS DE NUESTRO SISTEMA
+#------------------------------------------------------------------
+misubtitulo "Creando Directorios de sistema"
+
+#	Declaramos los directorios.
 declare -a dirs=(
 	"/$SERVERDIRECTORY"
 	"/$SERVERDIRECTORY/www"
-	"/$SERVERDIRECTORY/installed"
+	"/$SERVERDIRECTORY/backups"
 	"/$SERVERDIRECTORY/ssl"
 	"/$SERVERDIRECTORY/logs"
-	"/$SERVERDIRECTORY/logs/system"
 )
 
+#	Creación de Directorios
 for dir in "${dirs[@]}"
 do
-	# Verificar si el directorio existe | Check if the directory exists
+	# Verificar si el directorio existe
 	if [ -d "$dir" ]; then
-        sleep $pausa_corta
-		echo -e "El directorio ${amarillo}$dir${reset} existe. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+		ok "El directorio $dir ya existe. Lo eliminamos." false
+		rm -R "$dir"
+		log "Se ha eliminado el Directorio $dir y sus subdirectorios."
 	else
-		# Crear el directorio y mostrar un mensaje | Create the directory and display a message.
-		mkdir "$dir"
-		echo -e "El Directorio ${amarillo}$dir${reset} ha sido creado. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-        sleep $pausa_corta
+		ok "El directorio $dir aún no existe. Lo crearemos."
 	fi
+	mkdir "$dir"
+	sudo chmod 774 "$dir"
+	sudo chown root:"$SUDOGROUP" "$dir"
+	log "Se crea el Directorio $dir con permisos 774 y chown root:"$SUDOGROUP""
+	ok "El Directorio ${destacar}$dir${reset} ha sido creado." false
+	sleep $PAUSA_CORTA
 done
 
-sleep $pausa_corta
+#						REGISTRO DE ACTUALIZACIONES
+#------------------------------------------------------------------
+misubtitulo "Creación del Registro de Actualizaciones"
 
-# ACTUALIZACIÓN INICIAL DEL SISTEMA
-
-echo -e "${cian_claro}${sub}
-Verificando Actualizaciones${reset}"
-
-    echo -e "${cian_claro}${sub}
-Actualización de Repositorios${reset}"
-
-FILE_INSTALLED_NAME="01-update"
-if [[ -f /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME ]]
-then
-	echo -e "No volveremos a actualizar los repositorios. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#	Crea el registro de actualizaciones si no está creado ya.
+if [[ ! -f "update.cfg" ]]; then
+	echo "ULTIMA_ACTUALIZACION=0" > update.cfg
+	echo "ULTIMO_UPGRADE=0" >> update.cfg
+	echo "REPO_APACHE=0" >> update.cfg
+	echo "REPO_PHP=0" >> update.cfg
+	sudo chown "$SUDOUSER":"$SUDOGROUP" update.cfg
+	sudo chmod 664 update.cfg
+	log "Se ha creado update.cfg con permisos 664 y "$SUDOUSER":"$SUDOGROUP""
+	ok "Se ha creado el Registro update.cfg" false
 else
-	apt-get update -y 2>&1 | tee /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME
-	echo -e "Se han actualizado los repositorios. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	ok "El registro de actualizaciones ya existia con anterioridad." false
 fi
 
-    echo -e "${cian_claro}${sub}
-Actualización de Aplicaciones${reset}"
+#	Verificamos que el archivo exista.
+if [ -f "update.cfg" ]; then
+	#	Verifica existencia de parametros.
+	ULTIMA_ACTUALIZACION=$(grep "^ULTIMA_ACTUALIZACION=" "update.cfg" | cut -d "=" -f 2)
+	if [ -n "$ULTIMA_ACTUALIZACION" ]; then
+		ok "El parámetro ${destacar}ULTIMA_ACTUALIZACION${reset} existe en update.cfg." false
+	else
+		log "Falta ULTIMA_ACTUALIZACION en update.cfg"
+		error "El parámetro ${destacar}ULTIMA_ACTUALIZACION${reset} NO existe en update.cfg." false
+ 	fi
 
-FILE_INSTALLED_NAME="02-upgrade"
-if [[ -f /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME ]]
-then
-	echo -e "No volveremos a actualizar aplicaciones. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	ULTIMO_UPGRADE=$(grep "^ULTIMO_UPGRADE=" "update.cfg" | cut -d "=" -f 2)	
+	if [ -n "$ULTIMO_UPGRADE" ]; then
+		ok "El parámetro ${destacar}ULTIMO_UPGRADE${reset} existe en update.cfg." false
+	else
+		log "Falta ULTIMO_UPGRADE en update.cfg"
+		error "El parámetro ${destacar}ULTIMO_UPGRADE${reset} NO existe en update.cfg." false
+ 	fi
+
+	REPO_APACHE=$(grep "^REPO_APACHE=" "update.cfg" | cut -d "=" -f 2)
+	if [ -n "$REPO_APACHE" ]; then
+		ok "El parámetro ${destacar}REPO_APACHE${reset} existe en update.cfg." false
+	else
+		log "Falta REPO_APACHE en update.cfg"
+		error "El parámetro ${destacar}REPO_APACHE${reset} NO existe en update.cfg." false
+  	fi
+
+	REPO_PHP=$(grep "^REPO_PHP=" "update.cfg" | cut -d "=" -f 2)
+	if [ -n "$REPO_PHP" ]; then
+		ok "El parámetro ${destacar}REPO_PHP${reset} existe en update.cfg." false
+	else
+		log "Falta REPO_PHP en update.cfg"
+		error "El parámetro ${destacar}REPO_PHP${reset} NO existe en update.cfg." false
+ 	fi
+	ok "El Registro ${destacar}update.cfg${reset} ha sido creado." false
+	log "Se ha creado el Registro update.cfg con todos sus parametros."
 else
-	apt-get upgrade -y 2>&1 | tee /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME
-	echo -e "Se han actualizado las aplicaciones. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	error "Hay un problema con el archivo REGISTRO DE ACTUALIZACIONES (update.cfg). No existe."
 fi
 
-sleep $pausa_corta
+sleep $PAUSA_CORTA
 
-# LOCALES
-echo -e "${cian_claro}${sub}
-Actualizar Soporte Idioma Local${reset}"
+#					PERSONALIZAMOS EL SISTEMA
+#------------------------------------------------------------------
+misubtitulo "Personalizamos el sistema  en base a distros y versiones"
+# NOTA:
+#	Como los repositorios son personalizados para cada distribución, se agregan
+# según el soporte de la distribución correspondiente.
+#	Agregamos mas versiones para tener claridad en el futuro.
 
-FILE_INSTALLED_NAME="03-locales"
-if [[ -f /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME ]]
-then
-    echo -e "El soporte para español ya ha sido instalado. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#	Obtenemos los valores
+REPO_APACHE=$(grep "^REPO_APACHE=" "update.cfg" | cut -d "=" -f 2)
+REPO_PHP=$(grep "^REPO_PHP=" "update.cfg" | cut -d "=" -f 2)
+
+mititulo_log "AGREGAMOS REPOSITORIOS"
+
+if [ "$actual_DIST" = "Ubuntu" ]; then
+	#	Titulo del update
+
+	if [ "$actual_version" = "20.04" ]; then
+		#Se instalara para Ubuntu 20.04 Focal Fossa
+		
+		#	APACHE
+		if [ "$REPO_APACHE" -eq 0 ]; then
+			misubtitulo_log "AGREGAMOS REPOSITORIO APACHE"
+			misubtitulo_update "AGREGAMOS REPOSITORIO APACHE"
+			echo -e "\n" | sudo add-apt-repository ppa:ondrej/apache2 | tee -a update.cfg tmp.log > /dev/null 2>&1
+			ok "${destacar}Repositorio Apache${reset} agregado." false
+			log "Se ha agregado el repositorio de Apache2. Ver update.cfg"
+			sed -i "s/^REPO_APACHE=.*/REPO_APACHE=1/" "update.cfg"
+		else
+			ok "${destacar}Repositorio Apache${reset} ya fue agregado." false
+			log "No se ha agregado el repositorio de Apache2. Ver update.cfg"
+		fi
+
+		#	PHP
+		if [ "$REPO_PHP" -eq 0 ]; then
+			misubtitulo_log "AGREGAMOS REPOSITORIO PHP"
+			misubtitulo_update "AGREGAMOS REPOSITORIO PHP"
+			echo -e "\n" | sudo add-apt-repository ppa:ondrej/php | tee -a update.cfg tmp.log > /dev/null 2>&1
+			ok "${destacar}Repositorio PHP${reset} agregado." false
+			log "Se ha agregado el repositorio de PHP. Ver update.cfg"
+			sed -i "s/^REPO_PHP=.*/REPO_PHP=1/" "update.cfg"
+		else
+			ok "${destacar}Repositorio PHP${reset} ya fue agregado."
+		fi
+
+	elif [ "$actual_version" = "22.04" ]; then
+		#	Desde UBUNTU 22, al hacer upgrade aparece una ventana que requiere interacción.
+		#	La desactivamos y reiniciamos los servicios automáticamente.
+		sudo echo "\$nrconf{restart} = 'a'; " >> /etc/needrestart/needrestart.conf
+
+		#	APACHE
+		if [ "$REPO_APACHE" -eq 0 ]; then
+			misubtitulo_log "AGREGAMOS REPOSITORIO APACHE"
+			misubtitulo_update "AGREGAMOS REPOSITORIO APACHE"
+			echo -e "\n" | sudo add-apt-repository ppa:ondrej/apache2 | tee -a update.cfg tmp.log > /dev/null 2>&1
+			ok "${destacar}Repositorio Apache${reset} agregado." false
+			log "Se ha agregado el repositorio de Apache2. Ver update.cfg"
+			sed -i "s/^REPO_APACHE=.*/REPO_APACHE=1/" "update.cfg"
+		else
+			ok "${destacar}Repositorio Apache${reset} ya fue agregado." false
+			log "No se ha agregado el repositorio de Apache2. Ver update.cfg"
+		fi
+
+		#	PHP
+		if [ "$REPO_PHP" -eq 0 ]; then
+			misubtitulo_log "AGREGAMOS REPOSITORIO PHP"
+			misubtitulo_update "AGREGAMOS REPOSITORIO PHP"
+			echo -e "\n" | sudo add-apt-repository ppa:ondrej/php | tee -a update.cfg tmp.log > /dev/null 2>&1
+			ok "${destacar}Repositorio PHP${reset} agregado." false
+			log "Se ha agregado el repositorio de PHP. Ver update.cfg"
+			sed -i "s/^REPO_PHP=.*/REPO_PHP=1/" "update.cfg"
+		else
+			ok "${destacar}Repositorio PHP${reset} ya fue agregado."
+		fi
+
+	elif [ "$actual_version" = "23.10" ]; then
+		echo "Se instalara para Ubuntu 23.10 Mantic Minotaur"
+	else
+		log "Error 401 - No se reconoce la version de Ubuntu. ($actual_version)" 
+		error "Por favor comunicate con Fibercat para resolver esta incidencia.(401)" false
+	fi
+elif [ "$actual_DIST" = "debian" ]; then
+	if [ "$actual_version" = "11.8" ]; then
+		#	Hasta el 11 de febrero de 2024
+		echo "Se instalara para Debian 11.8 bullseye"
+	elif [ "$actual_version" = "11.9" ]; then
+		#	Desde el 10 de febrero de 2024
+		echo "Se instalara para Debian 11.9 bullseye"		
+	elif [ "$actual_version" = "12.5" ]; then
+		#	Desde el 10 de febrero de 2024
+		echo "Se instalara para Debian 12.5 bookworm"	
+	elif [ "$actual_version" = "13" ]; then
+		#	Salida aun no decidida
+		echo "Se instalara para Debian 13 trixie"				
+	else
+		log "Error 402 - No se reconoce la version de Debian. ($actual_version)" 
+		error "Por favor comunicate con Fibercat para resolver esta incidencia.(402)" false
+	fi
 else
-    apt-get install language-pack-es -y 2>&1 | tee /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME
-    sudo update-locale LANG=$LOCALES
-    echo -e "El soporte para español se ha sido instalado con exito. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	log "Error 403 - No se reconoce la distribución. ($actual_version)" 
+	error "Por favor comunicate con Fibercat para resolver esta incidencia.(403)" false
+fi
+log "Se ha agregado el repositorio de Apache y PHP"
+echo "------------------------------------------------------------------" >> update.cfg
+log "------------------------------------------------------------------"
+
+sleep $PAUSA_CORTA
+
+#					ACTUALIZAMOS REPOSITORIOS
+#------------------------------------------------------------------
+misubtitulo "Actualizamos los repositorios"
+
+TIEMPO_ACTUAL=$(date +%s)
+TIEMPO_TRANS_UPDATE=$((TIEMPO_ACTUAL - ULTIMA_ACTUALIZACION))
+
+# Verificar si $TIEMPO_TRANS_UPDATE es mayor o igual a 3600
+if [ "$TIEMPO_TRANS_UPDATE" -ge "$TIEMPO_ENTRE_ACTUALIZACIONES" ]; then
+	misubtitulo_update "ACTUALIZAMOS REPOSITORIOS"
+	misubtitulo_log "ACTUALIZAMOS REPOSITORIOS"
+	destacar "Actualizando los repositorios. Espere por favor..."
+	echo -e "\n" | sudo apt-get update -y | tee -a update.cfg tmp.log > /dev/null 2>&1
+	sed -i "s/^ULTIMA_ACTUALIZACION=.*/ULTIMA_ACTUALIZACION=$TIEMPO_ACTUAL/" "update.cfg"
+	ok "Se ha realizado la actualización de los repositorios."
+else
+	ok "El tiempo transcurrido ($TIEMPO_TRANS_UPDATE) es menor a $TIEMPO_ENTRE_ACTUALIZACIONES segundos. No se realiza ninguna acción."
 fi
 
-# HORA
-echo -e "${cian_claro}${sub}
-Actualizar Zona Horaria${reset}"
+sleep $PAUSA_CORTA
 
-TIME=$(cat /etc/timezone);
-if [[ $TIME == "$TIMEZONE" ]]
-then
-	echo -e "La zona horaria solicitada ($TIMEZONE) ya es $TIME. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#					ACTUALIZAMOS APLICACIONES
+#------------------------------------------------------------------
+misubtitulo "Actualizamos las apps"
+
+TIEMPO_TRANS_UPGRADE=$((TIEMPO_ACTUAL - ULTIMO_UPGRADE))
+# Verificar si $TIEMPO_TRANS_UPGRADE es mayor o igual a 3600
+if [ "$TIEMPO_TRANS_UPGRADE" -ge "$TIEMPO_ENTRE_ACTUALIZACIONES" ]; then
+	misubtitulo_update "ACTUALIZAMOS LAS APPS"
+	misubtitulo_log "ACTUALIZAMOS LAS APPS"
+	destacar "Actualizando las aplicaciones. Espere por favor..."
+	sudo apt-get upgrade -y  2>&1 | tee -a update.cfg tmp.log > /dev/null
+	sed -i "s/^ULTIMO_UPGRADE=.*/ULTIMO_UPGRADE=$TIEMPO_ACTUAL/" "update.cfg"
+	ok "Se ha realizado la actualización de las aplicaciones."
 else
-    timedatectl set-timezone $TIMEZONE
-	echo -e "Se ha reemplazado $TIME a $TIMEZONE. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	ok "El tiempo transcurrido ($TIEMPO_TRANS_UPDATE) es menor a $TIEMPO_ENTRE_ACTUALIZACIONES segundos. No se realiza ninguna acción."
 fi
 
-# FIREWALL
+sleep $PAUSA_CORTA
 
-# Verificar firewall
-echo -e "${cian_claro}${sub}
-Verificando la instalación del Firewall (UFW)${reset}"
-
-FILE_INSTALLED_NAME="04-firewall"
-if [[ -f /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME ]]
-then
-	echo -e "Ya existe el Firewall (UFW) en el sistema. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#					FIREWALL
+#------------------------------------------------------------------
+misubtitulo "El Firewall"
+mititulo_log "EL FIREWALL UFW"
+# Verificar si UFW está instalado
+if command -v ufw &> /dev/null; then
+   	ok "UFW está instalado en el sistema."
 else
-    if ! command -v ufw &> /dev/null; then
-        echo "UFW no está instalado. Instalando..."
-        sudo apt-get install -y ufw -y 2>&1 | tee /$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME
-        echo -e "UFW instalado correctamente. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-    else
-        echo "Ok">>/$SERVERDIRECTORY/installed/$FILE_INSTALLED_NAME
-        echo -e "Ya existe el Firewall (UFW) en el sistema. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-    fi
+	misubtitulo_log "Instalamos UFW"
+	destacar "Instalando UFW. Espere por favor..."
+    echo -e "\n" | sudo apt-get install ufw -y  2>&1 | tee -a tmp.log > /dev/null
+	ok "Se ha instalado UFW (El Firewall no complicado)."
 fi
 
-# Activar OpenSSH
-echo -e "${cian_claro}${sub}
-Autorizando OpenSSH y Activando UFW${reset}"
+sleep $PAUSA_CORTA
 
-# Verificar si UFW ya está activado
-if ! sudo ufw status | grep -q "Estado: activo"; then
-    echo -e "${amarillo}Activando OpenSSH en UFW...${reset}"
-    sudo ufw allow 22
-    echo -e "${amarillo}Iniciando UFW...${reset}"
-    sudo ufw --force enable
-    echo -e "UFW iniciado y OpenSSH permitido. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+#					FIREWALL: BLINDAJE
+#------------------------------------------------------------------
+misubtitulo "El Firewall: EL BLINDAJE. AHORA ES PERSONAL."
+misubtitulo_log "Aplicando configuraciones del firewall"
+sudo echo -e "s" | ufw default deny incoming >> tmp.log 2>&1  # Deniega todas las conexiones entrantes por defecto
+sudo echo -e "s" | ufw allow 22/tcp >> tmp.log 2>&1           # Permite conexiones al puerto 22 (SSH)
+sudo echo -e "s" | ufw enable >> tmp.log 2>&1 
+sudo systemctl restart ufw >> tmp.log 2>&1 
+log "Se ha habilitado el firewall y aplicado sobre el puerto 22."
+
+sleep $PAUSA_CORTA
+
+#					COMPILACIÓN
+#------------------------------------------------------------------
+# Verificar si esta instalado make
+if command -v make &> /dev/null; then
+   	ok "Make  está instalado en el sistema."
 else
-    echo -e "UFW ya está activado en el sistema. ${boton_correcto}${cian_claro}CORRECTO${reset}"
-    echo -e "${amarillo}Activando OpenSSH en UFW...${reset}"
-    sudo ufw allow OpenSSH
-    echo -e "OpenSSH permitido. ${boton_correcto}${cian_claro}CORRECTO${reset}"
+	misubtitulo_log "Instalamos UFW"
+	destacar "Instalando UFW. Espere por favor..."
+    echo -e "\n" | sudo apt-get install ufw -y  2>&1 | tee -a tmp.log > /dev/null
+	ok "Se ha instalado UFW (El Firewall no complicado)."
+fi
+
+sleep $PAUSA_CORTA
+
+#					APACHE
+#------------------------------------------------------------------
+mititulo "INSTALACIÓN Y CONFIGURACIÓN DE APACHE"
+misubtitulo "Instalando Apache 2.4"
+misubtitulo_log "Instalando Apache 2.4"
+
+#	Verificamos la instalacion de apache
+if command -v apache2 &> /dev/null; then
+   	ok "Apache está instalado en el sistema."
+	sudo echo -e "s" | ufw allow 80/tcp >> tmp.log 2>&1           # Permite conexiones al puerto 80, 8080 (SSH)
+	sudo echo -e "s" | ufw allow 8080/tcp >> tmp.log 2>&1           # Permite conexiones al puerto 22 (SSH)
+else
+	misubtitulo_log "Instalamos Apache 2.4"
+	destacar "Instalando Apache 2. Espere por favor..."
+    echo -e "\n" | sudo apt-get install apache2 -y  2>&1 | tee -a tmp.log > /dev/null
+	sudo echo -e "s" | ufw allow 80/tcp >> tmp.log 2>&1           # Permite conexiones al puerto 80, 8080 (SSH)
+	sudo echo -e "s" | ufw allow 8080/tcp >> tmp.log 2>&1           # Permite conexiones al puerto 22 (SSH)
+	ok "Se ha instalado Apache2."
+fi
+
+sleep $PAUSA_CORTA
+
+#					PHP
+#------------------------------------------------------------------
+#	Verificamos la instalacion de apache
+	mititulo "INSTALACIÓN Y CONFIGURACIÓN DE PHP"
+	misubtitulo "Instalando PHP 8.3"
+if command -v php &> /dev/null; then
+   	ok "PHP está instalado en el sistema."
+else
+	misubtitulo_log "Instalando PHP 8.3"
+	destacar "Instalando PHP 8.3. Espere por favor..."
+	echo -e "\n" | sudo apt-get install php8.3 libapache2-mod-php8.3 php-mysql -y  2>&1 | tee -a tmp.log > /dev/null
+	systemctl restart apache2.service
+	ok "Se ha instalado PHP 8.3."
 fi
