@@ -15,10 +15,11 @@ Fibercat Luffy es un script Bash diseñado para facilitar la instalación de un 
 2. Edita las configuraciones de los siguientes archivos:
 - config.cfg
 ```
-SERVERDIRECTORY="fibercat_luffy"
-LOCALES="es_CL.UTF-8"
-TIMEZONE="America/Santiago"
-DOMAIN="my.domain.com"
+DOMAIN="my.domain.com" 				#	my.domain.com
+SERVERDIRECTORY="fibercat_luffy"	#	Rutas
+ADMINMAIL="myemail@domain.com"	#	Correo del servidor
+SUDOUSER="mysudoeruser"         #   Usuario con privilegios de Sudo
+
 ```
 - ssh_key.cfg
 
