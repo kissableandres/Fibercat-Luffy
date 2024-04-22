@@ -9,10 +9,11 @@ Fibercat Luffy es un script Bash diseñado para facilitar la instalación de un 
 ## Instalación
 
 ### Desde Github
-1. Clona el repositorio en tu servidor:
+1. Ingresa al directorio home del usuario (No se instalará en ese directorio). 
+2. Clona el repositorio en tu servidor:
    ```bash
    git clone https://github.com/kissableandres/Fibercat-Luffy.git
-2. Edita las configuraciones de los siguientes archivos:
+3. Edita las configuraciones de los siguientes archivos:
 - config.cfg
 ```
 DOMAIN="my.domain.com" 		#	my.domain.com
